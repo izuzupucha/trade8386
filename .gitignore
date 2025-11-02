@@ -1,1 +1,7 @@
-".streamlit/secrets.toml" 
+# .gitignore
+*.json
+.streamlit/secrets.toml
+# Bỏ qua toàn bộ thư mục cache biên dịch Python
+__pycache__/
+*.py[cod]
+*$py.class

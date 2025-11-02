@@ -5,22 +5,36 @@ import streamlit as st
 import datetime
 
 # ============================================================
-# 🚀 Tự động tải code từ repo private
+# ⚙️ Cấu hình chung
 # ============================================================
 
-PRIVATE_REPO_URL = st.secrets["PRIVATE_REPO_URL"]
-GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
-PRIVATE_REPO_DIR = "private_repo"
+st.set_page_config(page_title="Crypto Analyzer", page_icon="💹", layout="centered")
 
-if not os.path.exists(PRIVATE_REPO_DIR):
-    repo_url = PRIVATE_REPO_URL.replace("https://", f"https://{GITHUB_TOKEN}@")
-    subprocess.run(
-        ["git", "clone", "--depth", "1", repo_url, PRIVATE_REPO_DIR],
-        check=True,
-    )
+def is_running_on_streamlit_cloud() -> bool:
+    """Kiểm tra app đang chạy trên Streamlit Cloud hay local."""
+    return st.secrets.get("env", {}).get("mode") == "cloud"
 
-# Thêm private repo vào sys.path để import được module
-sys.path.append(os.path.abspath(PRIVATE_REPO_DIR))
+# ============================================================
+# 🚀 Xử lý import code từ repo private
+# ============================================================
+
+if is_running_on_streamlit_cloud():
+    # ✅ Trên Streamlit Cloud → clone repo private
+    PRIVATE_REPO_URL = st.secrets["PRIVATE_REPO_URL"]
+    GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+    PRIVATE_REPO_DIR = "private_repo"
+
+    if not os.path.exists(PRIVATE_REPO_DIR):
+        repo_url = PRIVATE_REPO_URL.replace("https://", f"https://{GITHUB_TOKEN}@")
+        subprocess.run(
+            ["git", "clone", "--depth", "1", repo_url, PRIVATE_REPO_DIR],
+            check=True,
+        )
+    sys.path.append(os.path.abspath(PRIVATE_REPO_DIR))
+else:
+    # 💻 Local → sử dụng repo private có sẵn trong máy
+    PRIVATE_REPO_DIR = "../mvc_python_analyzer"  # đường dẫn tới repo private
+    sys.path.append(os.path.abspath(PRIVATE_REPO_DIR))
 
 # ============================================================
 # 🧩 Import code chính từ repo private
@@ -34,13 +48,8 @@ from view.user.profile_view import ProfileView
 from view.order_form_view import OrderFormView
 
 # ============================================================
-# ⚙️ App logic như cũ
+# 🧠 Logic chính của app
 # ============================================================
-
-st.set_page_config(page_title="Crypto Analyzer", page_icon="💹", layout="centered")
-
-def is_running_on_streamlit_cloud() -> bool:
-    return st.secrets.get("env", {}).get("mode") == "cloud"
 
 def main():
     params = st.query_params
@@ -53,6 +62,7 @@ def main():
 
     running_on_cloud = is_running_on_streamlit_cloud()
 
+    # 🧠 Xử lý đăng nhập
     if "user" not in st.session_state:
         if running_on_cloud:
             LoginView.show_login(user_controller)
@@ -65,14 +75,12 @@ def main():
                 "username": "local_dev"
             }
 
-    if "active_page" not in st.session_state:
-        st.session_state["active_page"] = "admin"
-
-    if "current_view" not in st.session_state:
-        st.session_state["current_view"] = "menu"
+    # 🧭 Trạng thái view
+    st.session_state.setdefault("active_page", "admin")
+    st.session_state.setdefault("current_view", "menu")
 
     user = st.session_state["user"]
-    current_view = st.session_state.get("current_view", "menu")
+    current_view = st.session_state["current_view"]
 
     if current_view == "menu":
         MenuView.show_main_menu(controller, user_controller, user)
@@ -88,6 +96,7 @@ def main():
         st.warning("⚠️ View không xác định, quay lại menu chính.")
         st.session_state["current_view"] = "menu"
         st.rerun()
+
 
 if __name__ == "__main__":
     main()
