@@ -5,3 +5,9 @@ pandas
 numpy
 requests
 plotly
+langchain-community>=0.2.0
+streamlit>=1.32.0
+langchain==0.3.7
+langchain-core==0.3.15
+langchain-openai==0.2.2
+openai==1.53.0
